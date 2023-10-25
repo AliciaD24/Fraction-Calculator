@@ -1,30 +1,28 @@
 package Classes.FractionCalculator;
 
-import java.util.Scanner;
-
 class Fraction {
     private int numerator;
     private int denominator;
 
-    /** Constructor for a Fraction with a numerator and denominator value
+    /** Constructor for a Fraction made up of a numerator and denominator value
      * @param numerator represents the numerator
      * @param denominator represents the denominator
+     * @throws IllegalArgumentException throws the exception if the denominator is 0
      */
     Fraction(int numerator, int denominator) throws IllegalArgumentException{
-        // this. is used when the argument has the same name as the parameter you're assigning it to which correlates to the attributes of the function.
         if (denominator == 0){
             throw new IllegalArgumentException("Denominator cannot be zero");
         }
-
         this.numerator = getSimplifiedNumerator(numerator, denominator);
         this.denominator = getSimplifiedDenominator(numerator, denominator);
     }
 
 
-    /** Constructor for a Fraction with a whole number, numerator and denominator value
+    /** Constructor for a Fraction made up of a whole number, numerator and denominator value
      * @param whole represents the whole number
      * @param numerator represents the numerator
      * @param denominator represents the denominator
+     * @throws IllegalArgumentException throws the exception if the denominator is 0
      */
     Fraction(int whole, int numerator, int denominator) throws IllegalArgumentException{
         if (denominator == 0){
@@ -40,6 +38,20 @@ class Fraction {
 
         this.numerator = getSimplifiedNumerator(numerator, denominator);
         this.denominator = getSimplifiedDenominator(numerator, denominator);
+    }
+
+    /** Constructor for a Fraction made up of a decimal value
+     * @param decimal represents the decimal 
+     */
+    Fraction(double decimal){
+        int digitsAfterDecimal = String.valueOf(decimal).length() - String.valueOf(decimal).indexOf('.') - 1;
+        double numerator = decimal;
+        int denominator = 1;
+        numerator *= Math.pow(10, digitsAfterDecimal);
+        denominator *= Math.pow(10, digitsAfterDecimal);
+        numerator = Math.round(numerator);
+        this.numerator = getSimplifiedNumerator((int)numerator, denominator);
+        this.denominator = getSimplifiedDenominator((int)numerator, denominator);
     }
 
 
@@ -71,6 +83,7 @@ class Fraction {
      * @param numerator represents the value of the original numerator
      * @param denominator represents the value of the denominator
      * @return returns the simplified version of the numerator using the denominator
+     * @throws IllegalArgumentException throws the exception if the denominator is 0
      */
     static int getSimplifiedNumerator(int numerator, int denominator) throws IllegalArgumentException{
         if (denominator == 0){
@@ -124,8 +137,12 @@ class Fraction {
 
     /** Sets the denominator to a new value
      * @param denominatorVal represents new denominator value
+     * @throws IllegalArgumentException throws the exceotion if the new denominator is 0
      */
-    void setDenominator(int denominatorVal){
+    void setDenominator(int denominatorVal) throws IllegalArgumentException{
+        if (denominatorVal == 0){
+            throw new IllegalArgumentException("Denominator cannot be zero");
+        }
         denominator = denominatorVal;
     }
     
@@ -181,8 +198,7 @@ class Fraction {
      */
     Fraction add(Fraction other){
         //a/b + c/d
-        //= (a *d + b * c) / b * d
-        
+        //= (a * d + b * c) / b * d
         int commonDenominator = denominator * other.denominator; 
         int numeratorOfResult = numerator * other.denominator + other.numerator * denominator;
         return new Fraction(numeratorOfResult, commonDenominator);
@@ -193,85 +209,67 @@ class Fraction {
      * @return Returns the result of subtracting one Fraction from the other
      */
     Fraction subtract(Fraction other){
-        return this.add(new Fraction(-1 * other.numerator, denominator));
+        int commonDenominator = denominator * other.denominator; 
+        int numeratorOfResult = numerator * other.denominator - other.numerator * denominator;
+        return new Fraction(numeratorOfResult, commonDenominator);
     }
 
+    /** Multiplies one Fraction with second Fraction
+     * @param other Represents second Fraction
+     * @return Returns the result of multiplying two Fractions together
+     */
     Fraction multiply(Fraction other){
         return new Fraction(numerator * other.numerator, denominator * other.denominator);
     }
 
-    Fraction divide(Fraction other){
-        return new Fraction(numerator * other.denominator, denominator * other.numerator);
+    /** Divides one Fraction by a second Fraction
+     * @param other Represents second Fraction
+     * @return Returns the result of dividing one Fraction by another
+     * @throws IllegalArgumentException throws the exception if the denominator of the other fraction is 0
+     */
+    Fraction divide(Fraction other) throws IllegalArgumentException{
+        if (other.numerator == 0){
+            throw new IllegalArgumentException("Cannot divide by zero");
+        }
+        return this.multiply(new Fraction(other.denominator, other.numerator));
     }
 
-    static Fraction valueOf(String expression){
-        return new Fraction(1); //FINISH THISSS
-    }
-
-    static void testAdd(){
-        Fraction f = new Fraction(-3, 4);
-        Fraction g = new Fraction(1, 4, 5);
-        System.out.println(f.add(g)); // 1 1/20
-    }
-
-    Fraction nextFraction(String fraction){
-        /*
-        int indexOfPlus = equation.indexOf("+");
-        int indexOfMinus = equation.indexOf("-");
-        int indexOfAsterisk = equation.indexOf("*");
-        int indexOfDivision = equation.indexOf(" / ");
-        int indexOfFirstOpperation = Math.min(Math.min(indexOfAsterisk, indexOfDivision), Math.min(indexOfMinus, indexOfPlus));
-        String fraction = equation.substring(0, indexOfFirstOpperation);
-        */
-        if (fraction.contains(" ")){
-            int whole = Integer.valueOf(fraction.split(" ")[0]);
-            int numerator = Integer.valueOf((fraction.split(" ")[1]).split("/")[0]);
-            int denominator = Integer.valueOf((fraction.split(" ")[1]).split("/")[0]);
+    
+    /** Returns the Fraction value of the expression whether the expression is in mixed, proper, improper, whole number or decimal number form
+     * @param expression Represents the String that is being converted to a fraction 
+     * @return Returns a Fraction object with the numerator and denominator values taken from the expression
+     * @throws IllegalArgumentException throws the exception if the expression does not match any of the acceptable formats for the String version of the fraction
+     */
+    static Fraction valueOf(String expression) throws IllegalArgumentException{
+        String mixedFractionRegex = "-{0,1}[1-9][0-9]* [1-9][0-9]*\\/-{0,1}[1-9][0-9]*";
+        String wholeFractionRegex = "-{0,1}[0-9]+";
+        String improperFractionRegex = "-{0,1}[0-9]+\\/-{0,1}[1-9][0-9]*";
+        String decimalRegex = "-{0,1}[0-9]+\\.[0-9]+"; 
+        if (expression.matches(mixedFractionRegex)){
+            int whole = Integer.valueOf(expression.split(" ")[0]);
+            int numerator = Integer.valueOf((expression.split(" ")[1]).split("/")[0]);
+            int denominator = Integer.valueOf((expression.split(" ")[1]).split("/")[1]);
             return new Fraction(whole, numerator, denominator);
         }
-        else if (!fraction.contains("/")){
-            return new Fraction(Integer.valueOf(fraction));
+        else if (expression.matches(wholeFractionRegex)){
+            return new Fraction(Integer.valueOf(expression));
         }
-        else{
-            int numerator = Integer.valueOf(fraction.split("/")[0]);
-            int denominator = Integer.valueOf(fraction.split("/")[0]);
+        else if (expression.matches(improperFractionRegex)){
+            int numerator = Integer.valueOf(expression.split("/")[0]);
+            int denominator = Integer.valueOf(expression.split("/")[1]);
             return new Fraction(numerator, denominator);
         }
+        else if (expression.matches(decimalRegex)){
+            return new Fraction(Double.valueOf(expression));
+        }
+        else {
+            throw new IllegalArgumentException("This cannot be a fraction");
+        }
     }
-    /*
-    void bedmass(String equation){
-        int indexOfPlus = equation.indexOf("+");
-        int indexOfMinus = equation.indexOf("-");
-        int indexOfAsterisk = equation.indexOf("*");
-        int indexOfDivision = equation.indexOf(" / ");
-        int indexOfFirstOpperation = Math.min(indexOfAsterisk, indexOfDivision);
-        
-    }
-    */
-
-    /* 
+    
     public static void main(String[] args) {
-        Scanner input = new Scanner(System.in);
-        try{
-            int num = input.nextInt();
-            int den = input.nextInt();
-            Fraction f = new Fraction(num, den);
-            System.out.println(f);
-        }
-        catch (IllegalArgumentException e){
-            System.out.println(e.getMessage());
-        }
-
-        input.close();
-        */
-        public static void main(String[] args) {
-            Scanner s = new Scanner("2 - 1/2 + 5/4 * 7/9");
-            s.useDelimiter(" ");
-            System.out.println(s.next());
-            System.out.println(s.next("[0-9] \\+ [0-9]"));
-
-        }
     }
+}
 
 
 
